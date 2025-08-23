@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<style>
+  body { font-family: DejaVu Sans, Arial, sans-serif; font-size: 12px; }
+  h1, h2, h3, h4, h5, h6 { margin: 6px 0; }
+  .section { margin-top: 10px; }
+  table { border-collapse: collapse; width: 100%; }
+  td, th { border: 1px solid #999; padding: 6px; }
+  .muted { color: #666; }
+</style>
+</head>
+<body>
+  <h2>Reporte FV On-Grid</h2>
+  <div class="muted">Exportado desde la Calculadora Web</div>
+
+  <div class="section">
+    <b>Objetivo:</b> {{ '%.2f'|format(report.inputs.kwh_month) }} kWh/mes → {{ '%.0f'|format(report.inputs.wh_day) }} Wh/día<br>
+    <b>HSP:</b> {{ report.inputs.HSP }} h &nbsp; <b>PR:</b> {{ report.inputs.PR }}<br>
+    <b>Potencia requerida:</b> {{ '%.2f'|format(report.P_req_wp/1000) }} kWp
+  </div>
+
+  <div class="section">
+    <h4>Inversor</h4>
+    Ventana MPPT: {{ report.inputs.inverter.mppt_min_v|int }}–{{ report.inputs.inverter.mppt_max_v|int }} V &nbsp;
+    Vdc_max: {{ report.inputs.inverter.vdc_max|int }} V &nbsp;
+    Imax: {{ report.inputs.inverter.imax_mppt }} A &nbsp;
+    Iscmax: {{ report.inputs.inverter.iscmax_mppt }} A &nbsp;
+    MPPTs: {{ report.inputs.inverter.n_mppt }}
+  </div>
+
+  <div class="section">
+    <h4>Módulo</h4>
+    STC: {{ report.inputs.module.wp|int }} Wp &nbsp;
+    Vmp: {{ report.inputs.module.vmp }} V &nbsp;
+    Imp: {{ report.inputs.module.imp }} A &nbsp;
+    Voc: {{ report.inputs.module.voc }} V &nbsp;
+    Isc: {{ report.inputs.module.isc }} A &nbsp;
+    Vsys_max: {{ report.inputs.module.max_system_v|int }} V
+  </div>
+
+  <div class="section">
+    <h4>Serie permitida por tensiones</h4>
+    Mín S (CALOR): {{ report.ranges.min_series }}S<br>
+    Máx S por tensión (FRÍO): {{ report.ranges.max_series_vlimit }}S &nbsp;
+    Máx S por MPPT (CALOR): {{ report.ranges.max_series_mppt }}S<br>
+    <b>Rango válido de S:</b> {{ report.ranges.min_series }}S … {{ report.ranges.max_series }}S
+  </div>
+
+  <div class="section">
+    <h4>Configuración</h4>
+    S={{ report.inputs.n_series }} • P={{ report.inputs.n_parallel }} • MPPTs usados={{ report.inputs.mppts_used }} → Strings totales={{ report.total.strings }}<br>
+    Vmp_hot(string)={{ '%.1f'|format(report.string_check.vmp_hot_string_V) }} V &nbsp;
+    Voc_cold(string)={{ '%.1f'|format(report.string_check.voc_cold_string_V) }} V<br>
+    I_op={{ '%.2f'|format(report.string_check.imp_string_A) }} A &nbsp;
+    Isc_total_cold/MPPT={{ '%.2f'|format(report.string_check.isc_cold_total_A) }} A
+  </div>
+
+  <div class="section">
+    <h4>Comprobaciones</h4>
+    <ul>
+    {% for key, label in report.labels.items() %}
+      <li>{{ label }}: <b>{{ 'OK' if report.string_check.checks[key] else 'FALLA' }}</b></li>
+    {% endfor %}
+    </ul>
+  </div>
+
+  <div class="section">
+    <h4>Producción</h4>
+    Potencia pico: {{ '%.2f'|format(report.total.wp/1000) }} kWp<br>
+    Estimado: {{ '%.2f'|format(report.total.prod_day) }} kWh/d ({{ report.total.prod_month|int }} kWh/mes)<br>
+    Cobertura: {{ '%.1f'|format(report.total.coverage_pct) }}%
+  </div>
+
+  {% if report.recos %}
+  <div class="section">
+    <h4>Recomendaciones (déficit)</h4>
+    Falta aprox.: {{ '%.2f'|format(report.recos.deficit_kwh_day) }} kWh/d ({{ report.recos.deficit_kwh_month|int }} kWh/mes)<br>
+    Strings: actuales={{ report.recos.strings_actual }}, requeridos={{ report.recos.strings_req }}, adicionales={{ report.recos.strings_extra_needed }}<br>
+    Máx paralelo/MPPT ≈ {{ report.recos.max_parallel_per_mppt }} &nbsp; Capacidad total: {{ report.recos.capacity_total_strings }} strings<br>
+    Plan (strings por MPPT): {{ report.recos.target_dist }}<br>
+    Producción con plan: {{ '%.2f'|format(report.recos.prod_day_target) }} kWh/d ({{ '%.2f'|format(report.recos.total_wp_target/1000) }} kWp)
+  </div>
+  {% endif %}
+</body>
+</html>

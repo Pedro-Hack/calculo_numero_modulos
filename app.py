@@ -1,184 +1,109 @@
-from flask import Flask, request, render_template_string
+# app.py
+from flask import Flask, render_template, request, make_response
+from pv_core import compute_report
+import csv, io, json
 
 app = Flask(__name__)
 
-HTML = """
-<!doctype html>
-<html lang="es">
-<head>
-<meta charset="utf-8">
-<title>Cálculo de Módulos en Serie (Voc)</title>
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<style>
-  :root{--bg:#0b1220;--card:#111a2b;--muted:#8aa0c6;--text:#e7eefc;--accent:#5aa3ff;--ok:#2ecc71;--warn:#f1c40f;--bad:#e74c3c;}
-  body{margin:0;font-family:ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Ubuntu; background:linear-gradient(180deg,#0b1220 0%, #0e1628 100%); color:var(--text);}
-  .wrap{max-width:880px;margin:40px auto;padding:0 16px;}
-  .card{background:var(--card);border:1px solid #1e2a44;border-radius:18px;box-shadow:0 10px 30px rgba(0,0,0,.35);overflow:hidden}
-  .header{padding:20px 24px;border-bottom:1px solid #1e2a44;display:flex;justify-content:space-between;align-items:center}
-  .header h1{margin:0;font-size:20px;letter-spacing:.3px}
-  .content{padding:20px 24px;display:grid;grid-template-columns:1fr 1fr;gap:20px}
-  .field{display:flex;flex-direction:column;gap:8px}
-  label{font-size:13px;color:var(--muted)}
-  input{background:#0b1324;border:1px solid #203154;border-radius:12px;padding:12px 14px;color:var(--text);font-size:15px;outline:none}
-  input:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(90,163,255,.15)}
-  .actions{padding:0 24px 20px}
-  button{background:var(--accent);color:white;border:none;border-radius:12px;padding:12px 18px;font-weight:600;cursor:pointer}
-  .results{padding:20px 24px;border-top:1px solid #1e2a44;display:grid;grid-template-columns:repeat(4,1fr);gap:18px}
-  .metric{background:#0b1324;border:1px solid #203154;border-radius:14px;padding:14px}
-  .metric h3{margin:0 0 6px 0;font-size:12px;color:var(--muted);font-weight:600;letter-spacing:.2px}
-  .metric p{margin:0;font-size:20px;font-weight:700}
-  .badge{display:inline-block;padding:6px 10px;border-radius:999px;font-size:12px;font-weight:700}
-  .ok{background:rgba(46,204,113,.15);color:var(--ok);border:1px solid rgba(46,204,113,.4)}
-  .warn{background:rgba(241,196,15,.12);color:var(--warn);border:1px solid rgba(241,196,15,.4)}
-  .bad{background:rgba(231,76,60,.12);color:var(--bad);border:1px solid rgba(231,76,60,.4)}
-  .note{padding:0 24px 24px;color:var(--muted);font-size:13px}
-  @media (max-width:900px){
-    .content{grid-template-columns:1fr}
-    .results{grid-template-columns:1fr 1fr}
-  }
-</style>
-</head>
-<body>
-  <div class="wrap">
-    <div class="card">
-      <div class="header">
-        <h1>Cálculo del número máximo de módulos en serie (Voc)</h1>
-        <span class="badge ok">PV Tool</span>
-      </div>
+def defaults():
+    return {
+        "kwh_month": 115,
+        "days": 30,
+        "HSP": 4.0,
+        "PR": 0.80,
+        "T_amb_min": 8.0,
+        "T_cell_hot": 65.0,
+        "inv_name": "Custom Inverter",
+        "n_mppt": 2,
+        "mppt_min": 80.0,
+        "mppt_max": 550.0,
+        "vdc_max": 600.0,
+        "imax": 11.0,
+        "iscmax": 13.8,
+        "mod_name": "Custom Module",
+        "wp": 450.0,
+        "vmp": 41.5,
+        "imp": 10.85,
+        "voc": 49.3,
+        "isc": 11.60,
+        "max_sys_v": 1000.0,
+        "gamma": -0.35,
+        "beta": -0.27,
+        "alpha": 0.05,
+        "auto_series": True,
+        "n_series": 3,
+        "n_parallel": 1,
+        "mppts_used": 1,
+    }
 
-      <form method="post">
-        <div class="content">
-          <div class="field">
-            <label for="Voc_modulo">Voc del módulo (V)</label>
-            <input id="Voc_modulo" name="Voc_modulo" type="number" step="0.01" min="0" required value="{{ form_vals.Voc_modulo }}">
-          </div>
-          <div class="field">
-            <label for="coef_temp">Coeficiente temperatura del Voc (1/°C, ej: -0.003)</label>
-            <input id="coef_temp" name="coef_temp" type="number" step="0.0001" required value="{{ form_vals.coef_temp }}">
-          </div>
-          <div class="field">
-            <label for="temp_min">Temperatura mínima esperada (°C)</label>
-            <input id="temp_min" name="temp_min" type="number" step="0.1" required value="{{ form_vals.temp_min }}">
-          </div>
-          <div class="field">
-            <label for="voltaje_max">Voltaje máximo del inversor (V)</label>
-            <input id="voltaje_max" name="voltaje_max" type="number" step="0.1" min="0" required value="{{ form_vals.voltaje_max }}">
-          </div>
-        </div>
-
-        <div class="actions">
-          <button type="submit">Calcular</button>
-        </div>
-      </form>
-
-      {% if show_results %}
-      <div class="results">
-        <div class="metric">
-          <h3>Nº máximo de módulos en serie</h3>
-          <p>{{ n_max }}</p>
-        </div>
-        <div class="metric">
-          <h3>Voc total (a {{ temp_min }} °C)</h3>
-          <p>{{ voc_total }} V</p>
-        </div>
-        <div class="metric">
-          <h3>Voc por módulo (a {{ temp_min }} °C)</h3>
-          <p>{{ voc_modulo_res }} V</p>
-        </div>
-        <div class="metric">
-          <h3>Uso del límite del inversor</h3>
-          <p>
-            {{ uso_pct }}%
-            {% if uso_class == 'ok' %}
-              <span class="badge ok">Cómodo</span>
-            {% elif uso_class == 'warn' %}
-              <span class="badge warn">Ajustado</span>
-            {% else %}
-              <span class="badge bad">Excede</span>
-            {% endif %}
-          </p>
-        </div>
-      </div>
-      <div class="note">
-        Tip: si el uso está por encima de ~95%, considera reducir 1 módulo o aplicar un margen de seguridad.
-      </div>
-      {% endif %}
-    </div>
-  </div>
-</body>
-</html>
-"""
-
-def calcular_n_max(voc_modulo, coef_temp, temp_min, vmax_inv, cap=100):
-    delta_T = temp_min - 25.0
-    n_max = 0
-    for n in range(1, cap + 1):
-        voc_total = voc_modulo * n * (1 + coef_temp * delta_T)
-        if voc_total <= vmax_inv:
-            n_max = n
-        else:
-            break
-    return n_max, delta_T
+def parse_form(form):
+    data = form.to_dict()
+    data["auto_series"] = "on" if data.get("auto_series") else ""
+    return data
 
 @app.route("/", methods=["GET", "POST"])
-def main():
-    form_vals = {
-        "Voc_modulo": "45.6",
-        "coef_temp": "-0.003",
-        "temp_min": "0",
-        "voltaje_max": "600"
-    }
-    show_results = False
-    n_max = voc_total = voc_modulo_res = uso_pct = None
-    uso_class = "ok"
-    temp_min = form_vals["temp_min"]
-
+def index():
+    vals = defaults()
+    report = None
     if request.method == "POST":
-        Voc_modulo = float(request.form["Voc_modulo"])
-        coef_temp = float(request.form["coef_temp"])
-        temp_min = float(request.form["temp_min"])
-        voltaje_max = float(request.form["voltaje_max"])
+        data = parse_form(request.form)
+        report = compute_report(data)
+        vals.update(data)
+    return render_template("index.html", vals=vals, report=report)
 
-        form_vals = {
-            "Voc_modulo": request.form["Voc_modulo"],
-            "coef_temp": request.form["coef_temp"],
-            "temp_min": request.form["temp_min"],
-            "voltaje_max": request.form["voltaje_max"],
-        }
+@app.route("/export/csv", methods=["POST"])
+def export_csv():
+    report = compute_report(parse_form(request.form))
+    output = io.StringIO()
+    w = csv.writer(output)
+    w.writerow(["Campo", "Valor"])
+    w.writerow(["kWh/mes objetivo", report["inputs"]["kwh_month"]])
+    w.writerow(["Wh/día objetivo", report["inputs"]["wh_day"]])
+    w.writerow(["HSP", report["inputs"]["HSP"]])
+    w.writerow(["PR", report["inputs"]["PR"]])
+    w.writerow(["T_amb_min (°C)", report["inputs"]["T_amb_min"]])
+    w.writerow(["T_cell_hot (°C)", report["inputs"]["T_cell_hot"]])
+    w.writerow(["S (serie)", report["inputs"]["n_series"]])
+    w.writerow(["P (paralelo/MPPT)", report["inputs"]["n_parallel"]])
+    w.writerow(["MPPTs usados", report["inputs"]["mppts_used"]])
+    w.writerow(["Potencia requerida (kWp)", report["P_req_wp"]/1000.0])
+    w.writerow(["Potencia instalada (kWp)", report["total"]["wp"]/1000.0])
+    w.writerow(["Producción (kWh/d)", report["total"]["prod_day"]])
+    w.writerow(["Producción (kWh/mes)", report["total"]["prod_month"]])
+    w.writerow(["Cobertura (%)", report["total"]["coverage_pct"]])
+    resp = make_response(output.getvalue().encode("utf-8"))
+    resp.headers["Content-Type"] = "text/csv; charset=utf-8"
+    resp.headers["Content-Disposition"] = "attachment; filename=report_fv.csv"
+    return resp
 
-        n_max, dT = calcular_n_max(Voc_modulo, coef_temp, temp_min, voltaje_max, cap=100)
-        voc_modulo_res_val = Voc_modulo * (1 + coef_temp * dT)
-        voc_total_val = voc_modulo_res_val * n_max
+@app.route("/export/json", methods=["POST"])
+def export_json():
+    report = compute_report(parse_form(request.form))
+    payload = json.dumps(report, ensure_ascii=False, indent=2)
+    resp = make_response(payload.encode("utf-8"))
+    resp.headers["Content-Type"] = "application/json; charset=utf-8"
+    resp.headers["Content-Disposition"] = "attachment; filename=report_fv.json"
+    return resp
 
-        # Métricas redondeadas
-        voc_modulo_res = f"{voc_modulo_res_val:.2f}"
-        voc_total = f"{voc_total_val:.2f}"
-
-        # Uso del límite
-        uso_pct_val = (voc_total_val / voltaje_max) * 100 if voltaje_max > 0 else 0
-        uso_pct = f"{uso_pct_val:.1f}"
-
-        # Clasificación
-        if uso_pct_val < 90:
-            uso_class = "ok"
-        elif uso_pct_val <= 100:
-            uso_class = "warn"
-        else:
-            uso_class = "bad"
-
-        show_results = True
-
-    return render_template_string(
-        HTML,
-        form_vals=form_vals,
-        show_results=show_results,
-        n_max=n_max,
-        voc_total=voc_total,
-        voc_modulo_res=voc_modulo_res,
-        uso_pct=uso_pct,
-        uso_class=uso_class,
-        temp_min=temp_min
-    )
+@app.route("/export/pdf", methods=["POST"])
+def export_pdf():
+    # Usa xhtml2pdf si está instalado; si falla, devuelve HTML imprimible
+    try:
+        from xhtml2pdf import pisa
+        html = render_template("report_pdf.html", report=compute_report(parse_form(request.form)))
+        result = io.BytesIO()
+        pisa.CreatePDF(io.StringIO(html), dest=result, encoding='utf-8')
+        pdf = result.getvalue()
+        resp = make_response(pdf)
+        resp.headers["Content-Type"] = "application/pdf"
+        resp.headers["Content-Disposition"] = "attachment; filename=report_fv.pdf"
+        return resp
+    except Exception as e:
+        html = render_template("report_pdf.html", report=compute_report(parse_form(request.form)), fallback_error=str(e))
+        resp = make_response(html)
+        resp.headers["Content-Type"] = "text/html; charset=utf-8"
+        resp.headers["Content-Disposition"] = "attachment; filename=report_fv.html"
+        return resp
 
 if __name__ == "__main__":
     app.run(debug=True)

@@ -1,0 +1,207 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="row g-4">
+  <div class="col-lg-5">
+    <form id="mainForm" method="post" class="card p-3 needs-validation" novalidate>
+      <h5>Sistema</h5>
+      <div class="row">
+        <div class="col-6 mb-3">
+          <label class="form-label">Consumo mensual [kWh/mes]</label>
+          <input name="kwh_month" value="{{ vals.kwh_month }}" class="form-control" type="number" step="any" min="0">
+          <div class="form-text">Si marcas “Wh/día”, este valor se ignora.</div>
+        </div>
+        <div class="col-6 mb-3">
+          <label class="form-label">Días por mes</label>
+          <input name="days" value="{{ vals.days }}" class="form-control" type="number" step="any" min="1" required>
+        </div>
+      </div>
+      <div class="form-check form-switch mb-2">
+        <input class="form-check-input" type="checkbox" id="use_wh_day">
+        <label class="form-check-label" for="use_wh_day">Ingresar consumo en Wh/día</label>
+      </div>
+      <div id="wh_day_group" class="mb-3 invis">
+        <label class="form-label">Wh/día</label>
+        <input name="wh_day" class="form-control" type="number" step="any" min="1">
+      </div>
+      <div class="row">
+        <div class="col-6 mb-3">
+          <label class="form-label">HSP [h/día]</label>
+          <input name="HSP" value="{{ vals.HSP }}" class="form-control" type="number" step="any" min="0.1" required>
+        </div>
+        <div class="col-6 mb-3">
+          <label class="form-label">PR [0–1]</label>
+          <input name="PR" value="{{ vals.PR }}" class="form-control" type="number" step="any" min="0.1" max="1" required>
+        </div>
+      </div>
+      <div class="row">
+        <div class="col-6 mb-3">
+          <label class="form-label">T° ambiente mínima [°C] (FRÍO)</label>
+          <input name="T_amb_min" value="{{ vals.T_amb_min }}" class="form-control" type="number" step="any">
+          <div class="form-text">Afecta Voc/Isc (β<0, α>0).</div>
+        </div>
+        <div class="col-6 mb-3">
+          <label class="form-label">T° celda caliente [°C] (CALOR)</label>
+          <input name="T_cell_hot" value="{{ vals.T_cell_hot }}" class="form-control" type="number" step="any">
+          <div class="form-text">Afecta Vmp (γ<0).</div>
+        </div>
+      </div>
+
+      <hr>
+      <h5>Inversor</h5>
+      <div class="mb-2"><input name="inv_name" value="{{ vals.inv_name }}" class="form-control" placeholder="Nombre"></div>
+      <div class="row">
+        <div class="col-4 mb-3"><label class="form-label"># MPPT</label><input name="n_mppt" value="{{ vals.n_mppt }}" class="form-control" type="number" min="1" max="8" required></div>
+        <div class="col-4 mb-3"><label class="form-label">MPPT min [V]</label><input name="mppt_min" value="{{ vals.mppt_min }}" class="form-control" type="number" step="any" required></div>
+        <div class="col-4 mb-3"><label class="form-label">MPPT max [V]</label><input name="mppt_max" value="{{ vals.mppt_max }}" class="form-control" type="number" step="any" required></div>
+      </div>
+      <div class="row">
+        <div class="col-4 mb-3"><label class="form-label">Vdc máx [V]</label><input name="vdc_max" value="{{ vals.vdc_max }}" class="form-control" type="number" step="any" required></div>
+        <div class="col-4 mb-3"><label class="form-label">Imax/MPPT [A]</label><input name="imax" value="{{ vals.imax }}" class="form-control" type="number" step="any" min="0.1" required></div>
+        <div class="col-4 mb-3"><label class="form-label">Iscmax/MPPT [A]</label><input name="iscmax" value="{{ vals.iscmax }}" class="form-control" type="number" step="any" min="0.1" required></div>
+      </div>
+
+      <hr>
+      <h5>Módulo</h5>
+      <div class="mb-2"><input name="mod_name" value="{{ vals.mod_name }}" class="form-control" placeholder="Nombre"></div>
+      <div class="row">
+        <div class="col-4 mb-3"><label class="form-label">Wp [W]</label><input name="wp" value="{{ vals.wp }}" class="form-control" type="number" step="any" min="1" required></div>
+        <div class="col-4 mb-3"><label class="form-label">Vmp [V]</label><input name="vmp" value="{{ vals.vmp }}" class="form-control" type="number" step="any" min="0.1" required></div>
+        <div class="col-4 mb-3"><label class="form-label">Imp [A]</label><input name="imp" value="{{ vals.imp }}" class="form-control" type="number" step="any" min="0.1" required></div>
+      </div>
+      <div class="row">
+        <div class="col-4 mb-3"><label class="form-label">Voc [V]</label><input name="voc" value="{{ vals.voc }}" class="form-control" type="number" step="any" min="0.1" required></div>
+        <div class="col-4 mb-3"><label class="form-label">Isc [A]</label><input name="isc" value="{{ vals.isc }}" class="form-control" type="number" step="any" min="0.1" required></div>
+        <div class="col-4 mb-3"><label class="form-label">Vsys máx [V]</label><input name="max_sys_v" value="{{ vals.max_sys_v }}" class="form-control" type="number" step="any" min="600" max="2000" required></div>
+      </div>
+      <div class="row">
+        <div class="col-4 mb-3"><label class="form-label">γ Pmax [%/°C]</label><input name="gamma" value="{{ vals.gamma }}" class="form-control" type="number" step="any"></div>
+        <div class="col-4 mb-3"><label class="form-label">β Voc [%/°C]</label><input name="beta" value="{{ vals.beta }}" class="form-control" type="number" step="any"></div>
+        <div class="col-4 mb-3"><label class="form-label">α Isc [%/°C]</label><input name="alpha" value="{{ vals.alpha }}" class="form-control" type="number" step="any"></div>
+      </div>
+
+      <hr>
+      <h5>Arreglo</h5>
+      <div class="form-check form-switch mb-2">
+        <input class="form-check-input" type="checkbox" id="auto_series" name="auto_series" {% if vals.auto_series %}checked{% endif %}>
+        <label class="form-check-label" for="auto_series">Calcular automáticamente S mínimo (CALOR)</label>
+      </div>
+      <div class="row">
+        <div class="col-4 mb-3" id="n_series_wrap">
+          <label class="form-label">S (serie)</label>
+          <input id="n_series" name="n_series" value="{{ vals.n_series }}" class="form-control" type="number" step="1" min="1">
+          <div class="form-text">Se calculará con Vmp_hot (CALOR).</div>
+        </div>
+        <div class="col-4 mb-3"><label class="form-label">P (paralelo/MPPT)</label><input name="n_parallel" value="{{ vals.n_parallel }}" class="form-control" type="number" step="1" min="1" required></div>
+        <div class="col-4 mb-3"><label class="form-label">MPPTs usados</label><input name="mppts_used" value="{{ vals.mppts_used }}" class="form-control" type="number" step="1" min="1" required></div>
+      </div>
+
+      <div class="sticky-actions no-print">
+        <button class="btn btn-primary">Calcular</button>
+        <button id="shareBtn" class="btn btn-outline-secondary">Compartir enlace</button>
+      </div>
+    </form>
+  </div>
+
+  <div class="col-lg-7">
+    {% if report %}
+    <div class="card p-3">
+      <h5>Reporte</h5>
+      <div class="mb-2 text-muted">Objetivo: {{ '%.2f'|format(report.inputs.kwh_month) }} kWh/mes → {{ '%.0f'|format(report.inputs.wh_day) }} Wh/día</div>
+      <div class="mb-3">HSP={{ report.inputs.HSP }} h • PR={{ report.inputs.PR }} → Potencia requerida ≈ <b>{{ '%.2f'|format(report.P_req_wp/1000) }} kWp</b></div>
+
+      <h6>Inversor</h6>
+      <div>Ventana MPPT: {{ report.inputs.inverter.mppt_min_v|int }}–{{ report.inputs.inverter.mppt_max_v|int }} V • Vdc_max: {{ report.inputs.inverter.vdc_max|int }} V</div>
+      <div>Imax={{ report.inputs.inverter.imax_mppt }} A • Iscmax={{ report.inputs.inverter.iscmax_mppt }} A • MPPTs={{ report.inputs.inverter.n_mppt }}</div>
+
+      <h6 class="mt-3">Módulo</h6>
+      <div>STC: {{ report.inputs.module.wp|int }} Wp • Vmp={{ report.inputs.module.vmp }} V • Imp={{ report.inputs.module.imp }} A • Voc={{ report.inputs.module.voc }} V • Isc={{ report.inputs.module.isc }} A • Vsys_max={{ report.inputs.module.max_system_v|int }} V</div>
+
+      <h6 class="mt-3">Parámetros térmicos & coeficientes</h6>
+      <ul class="mb-2">
+        <li>CALOR (Vmp): T_celda = {{ report.inputs.T_cell_hot }} °C → usa γ (Pmax, suele ser negativo)</li>
+        <li>FRÍO (Voc/Isc): T_amb = {{ report.inputs.T_amb_min }} °C → usa β (Voc, negativo) y α (Isc, positivo)</li>
+      </ul>
+
+      <h6 class="mt-3">Serie permitida por tensiones</h6>
+      <div><b>Mín S (CALOR):</b> ceil(MPPT_min / Vmp_hot_mód) = ceil({{ report.inputs.inverter.mppt_min_v }} / {{ '%.2f'|format(report.ranges.vmp_hot_mod) }}) = <b>{{ report.ranges.min_series }}S</b></div>
+      <div class="mt-2"><b>Máx S por TENSIÓN (FRÍO):</b> Vlimit = min(Vdc_max inv, Vsys_max mod) = min({{ report.inputs.inverter.vdc_max|int }}, {{ report.inputs.module.max_system_v|int }}) = {{ report.ranges.vlimit_used|int }} V → Máx S = floor({{ report.ranges.vlimit_used|int }} / {{ '%.2f'|format(report.ranges.voc_cold_mod) }}) = <b>{{ report.ranges.max_series_vlimit }}S</b></div>
+      <div><b>Máx S por MPPT (CALOR):</b> floor(MPPT_max / Vmp_hot_mód) = floor({{ report.inputs.inverter.mppt_max_v|int }} / {{ '%.2f'|format(report.ranges.vmp_hot_mod) }}) = <b>{{ report.ranges.max_series_mppt }}S</b></div>
+      <div class="mt-1">⇒ Rango válido de S: <b>{{ report.ranges.min_series }}S … {{ report.ranges.max_series }}S</b></div>
+
+      <h6 class="mt-3">Configuración evaluada</h6>
+      <div>S={{ report.inputs.n_series }} • P={{ report.inputs.n_parallel }} • MPPTs usados={{ report.inputs.mppts_used }} → Strings totales={{ report.total.strings }}</div>
+      <div>Vmp_hot(string)={{ '%.1f'|format(report.string_check.vmp_hot_string_V) }} V • Voc_cold(string)={{ '%.1f'|format(report.string_check.voc_cold_string_V) }} V</div>
+      <div>I_op(string)={{ '%.2f'|format(report.string_check.imp_string_A) }} A • Isc_total_cold/MPPT={{ '%.2f'|format(report.string_check.isc_cold_total_A) }} A</div>
+
+      <div class="mt-2">
+        <b>Comprobaciones:</b>
+        <ul class="mb-0">
+          {% for key, label in report.labels.items() %}
+          <li>{{ label }}: <b>{{ 'OK' if report.string_check.checks[key] else 'FALLA' }}</b></li>
+          {% endfor %}
+        </ul>
+        <div class="text-muted small">OK = cumple, FALLA = fuera de rango.</div>
+      </div>
+
+      <h6 class="mt-3">Producción</h6>
+      <div>Potencia pico: <b>{{ '%.2f'|format(report.total.wp/1000) }} kWp</b></div>
+      <div>Estimado: <b>{{ '%.2f'|format(report.total.prod_day) }} kWh/d</b> (~{{ report.total.prod_month|int }} kWh/mes)</div>
+      <div>Cobertura: <b>{{ '%.1f'|format(report.total.coverage_pct) }}%</b></div>
+
+      {% if report.recos %}
+      <hr>
+      <h6 class="mt-2">Recomendaciones (déficit)</h6>
+      <div>Falta aprox.: <b>{{ '%.2f'|format(report.recos.deficit_kwh_day) }} kWh/d</b> (~{{ report.recos.deficit_kwh_month|int }} kWh/mes)</div>
+      <div>Strings: actuales={{ report.recos.strings_actual }}, requeridos={{ report.recos.strings_req }}, adicionales={{ report.recos.strings_extra_needed }}</div>
+      <div>Capacidad por MPPT: máx paralelo permitido ≈ {{ report.recos.max_parallel_per_mppt }}</div>
+      <div>Capacidad total del inversor: {{ report.recos.capacity_total_strings }} strings</div>
+      <div class="mt-2">Plan sugerido (strings por MPPT): {{ report.recos.target_dist }}</div>
+      <div>Producción con plan: {{ '%.2f'|format(report.recos.prod_day_target) }} kWh/d ({{ '%.2f'|format(report.recos.total_wp_target/1000) }} kWp)</div>
+      {% endif %}
+
+      <!-- Botones de exportación: se vuelven a POSTear los mismos valores -->
+      <form class="mt-3 no-print" method="post" action="/export/csv">
+        {% for k,v in vals.items() %}
+          <input type="hidden" name="{{k}}" value="{{v}}">
+        {% endfor %}
+        <div class="d-flex gap-2">
+          <button class="btn btn-outline-secondary">Exportar CSV</button>
+      </form>
+      <form class="no-print" method="post" action="/export/json">
+        {% for k,v in vals.items() %}
+          <input type="hidden" name="{{k}}" value="{{v}}">
+        {% endfor %}
+          <button class="btn btn-outline-secondary">Exportar JSON</button>
+      </form>
+      <form class="no-print" method="post" action="/export/pdf">
+        {% for k,v in vals.items() %}
+          <input type="hidden" name="{{k}}" value="{{v}}">
+        {% endfor %}
+          <button class="btn btn-outline-secondary">Exportar PDF</button>
+        </div>
+      </form>
+    </div>
+    {% else %}
+    <div class="card p-4 text-muted">
+      Completa el formulario y presiona <b>Calcular</b> para ver el reporte.
+    </div>
+    {% endif %}
+  </div>
+</div>
+
+<script>
+(() => {
+  'use strict'
+  const forms = document.querySelectorAll('.needs-validation')
+  Array.from(forms).forEach(form => {
+    form.addEventListener('submit', event => {
+      if (!form.checkValidity()) {
+        event.preventDefault()
+        event.stopPropagation()
+      }
+      form.classList.add('was-validated')
+    }, false)
+  })
+})()
+</script>
+{% endblock %}
