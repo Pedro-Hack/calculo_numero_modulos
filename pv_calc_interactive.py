@@ -163,6 +163,7 @@ def suggest_series_range(mod: Module, inv: Inverter, T_cell_hot: float, T_amb_co
         "max_series": max_series
     }
 
+
 def format_checks(checks: Dict[str, bool]) -> str:
     mapping = {
         "mppt_min_ok": "Vmp_hot ≥ Vmppt_min",
@@ -172,11 +173,10 @@ def format_checks(checks: Dict[str, bool]) -> str:
         "iscmax_ok": "Isc_total ≤ Iscmax_MPPT",
     }
     lines = []
-    for k, label in mapping items():
+    for k, label in mapping.items():
         status = "OK" if checks.get(k, False) else "FALLA"
         lines.append(f"  - {label}: {status}")
     return "\n".join(lines)
-
 def plan_distribution(required_strings: int, n_mppt: int, max_parallel_per_mppt: int):
     dist = [0]*n_mppt
     remain = max(0, required_strings)
