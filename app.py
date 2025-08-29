@@ -5,6 +5,16 @@ import csv, io, json
 
 app = Flask(__name__)
 
+app.config['TEMPLATES_AUTO_RELOAD'] = True
+app.jinja_env.auto_reload = True
+app.jinja_env.cache = {}  # fuerza recarga de Jinja
+
+# Opcional: desactiva caché del navegador en desarrollo
+@app.after_request
+def add_header(resp):
+    resp.headers['Cache-Control'] = 'no-store'
+    return resp
+
 def defaults():
     return {
         "kwh_month": 115,
