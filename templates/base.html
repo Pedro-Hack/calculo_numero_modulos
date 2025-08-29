@@ -11,6 +11,11 @@
     .form-text { font-size: 0.85rem; }
     .sticky-actions { position: sticky; bottom: 0; background: #fff; padding-top: 8px; }
     .invis { display: none !important; }
+    .muted { color: #6c757d; }
+    /* Mantener el reporte visible a la derecha al hacer scroll (desde md en adelante) */
+    @media (min-width: 768px) {
+      .sticky-col { position: sticky; top: 16px; }
+    }
     @media print { .no-print { display:none !important; } }
   </style>
 </head>
@@ -23,6 +28,7 @@
     </p>
     {% block content %}{% endblock %}
   </div>
+
   <script>
     // Mostrar/ocultar campo de Wh/día
     function toggleWhDay() {
@@ -40,7 +46,6 @@
         const disabled = auto.checked;
         sField.readOnly = disabled;
         sField.classList.toggle('bg-light', disabled);
-        // Texto actualizado: ahora se calcula con Vmp (STC)
         const hint = sWrap.querySelector('.form-text');
         if (hint) hint.textContent = disabled
           ? 'Se calculará con Vmp (STC).'
@@ -48,23 +53,21 @@
       }
     }
 
+    // Compartir enlace con parámetros actuales del formulario
+    function handleShare(e) {
+      e.preventDefault();
+      const form = document.querySelector('form#mainForm');
+      const params = new URLSearchParams(new FormData(form));
+      const url = `${location.origin}${location.pathname}?${params.toString()}`;
+      navigator.clipboard.writeText(url).then(() => alert('Enlace copiado al portapapeles.'));
+    }
+
     document.addEventListener('DOMContentLoaded', () => {
       toggleWhDay();
       toggleAutoSeries();
-
       document.getElementById('use_wh_day')?.addEventListener('change', toggleWhDay);
       document.getElementById('auto_series')?.addEventListener('change', toggleAutoSeries);
-
-      // Compartir enlace con parámetros actuales del formulario
-      document.getElementById('shareBtn')?.addEventListener('click', (e) => {
-        e.preventDefault();
-        const form = document.querySelector('form#mainForm');
-        const params = new URLSearchParams(new FormData(form));
-        const url = `${location.origin}${location.pathname}?${params.toString()}`;
-        navigator.clipboard.writeText(url).then(() => {
-          alert('Enlace copiado al portapapeles.');
-        });
-      });
+      document.getElementById('shareBtn')?.addEventListener('click', handleShare);
     });
   </script>
 </body>
