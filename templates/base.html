@@ -17,15 +17,21 @@
 <body>
   <div class="container">
     <h1 class="mb-2">⚡ Calculadora FV On-Grid</h1>
-    <p class="text-muted mb-4">Explica CALOR/FRÍO y coeficientes, exporta CSV/JSON/PDF y sugiere distribución por MPPT.</p>
+    <p class="text-muted mb-4">
+      Vmp e Isc en <b>STC</b>; Voc ajusta con <b>β</b> (frío). Incluye exportación <b>CSV/JSON/PDF</b>,
+      distribución por MPPT y <b>sugerencia de inversor</b> según <b>DC/AC</b>.
+    </p>
     {% block content %}{% endblock %}
   </div>
   <script>
+    // Mostrar/ocultar campo de Wh/día
     function toggleWhDay() {
       const chk = document.getElementById('use_wh_day');
       const group = document.getElementById('wh_day_group');
       if (chk && group) group.classList.toggle('invis', !chk.checked);
     }
+
+    // Bloquear/desbloquear S cuando Auto-Serie está activo
     function toggleAutoSeries() {
       const auto = document.getElementById('auto_series');
       const sField = document.getElementById('n_series');
@@ -34,20 +40,30 @@
         const disabled = auto.checked;
         sField.readOnly = disabled;
         sField.classList.toggle('bg-light', disabled);
-        sWrap.querySelector('.form-text').textContent = disabled ? 'Se calculará con Vmp_hot (CALOR).' : 'Puedes definir S manualmente.';
+        // Texto actualizado: ahora se calcula con Vmp (STC)
+        const hint = sWrap.querySelector('.form-text');
+        if (hint) hint.textContent = disabled
+          ? 'Se calculará con Vmp (STC).'
+          : 'Puedes definir S manualmente.';
       }
     }
+
     document.addEventListener('DOMContentLoaded', () => {
       toggleWhDay();
       toggleAutoSeries();
+
       document.getElementById('use_wh_day')?.addEventListener('change', toggleWhDay);
       document.getElementById('auto_series')?.addEventListener('change', toggleAutoSeries);
+
+      // Compartir enlace con parámetros actuales del formulario
       document.getElementById('shareBtn')?.addEventListener('click', (e) => {
         e.preventDefault();
         const form = document.querySelector('form#mainForm');
         const params = new URLSearchParams(new FormData(form));
         const url = `${location.origin}${location.pathname}?${params.toString()}`;
-        navigator.clipboard.writeText(url).then(()=>alert('Enlace copiado al portapapeles.'));
+        navigator.clipboard.writeText(url).then(() => {
+          alert('Enlace copiado al portapapeles.');
+        });
       });
     });
   </script>

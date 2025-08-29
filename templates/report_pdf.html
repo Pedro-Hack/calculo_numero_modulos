@@ -41,20 +41,29 @@
   </div>
 
   <div class="section">
+    <h4>Parámetros térmicos & coeficientes</h4>
+    <ul>
+      <li><b>Vmp:</b> valor STC (sin ajuste térmico).</li>
+      <li><b>Voc (FRÍO):</b> se ajusta con β (Voc, negativo) usando T° ambiente mínima.</li>
+      <li><b>Isc:</b> valor STC (sin ajuste térmico).</li>
+    </ul>
+  </div>
+
+  <div class="section">
     <h4>Serie permitida por tensiones</h4>
-    Mín S (CALOR): {{ report.ranges.min_series }}S<br>
+    Mín S: {{ report.ranges.min_series }}S<br>
     Máx S por tensión (FRÍO): {{ report.ranges.max_series_vlimit }}S &nbsp;
-    Máx S por MPPT (CALOR): {{ report.ranges.max_series_mppt }}S<br>
+    Máx S por MPPT: {{ report.ranges.max_series_mppt }}S<br>
     <b>Rango válido de S:</b> {{ report.ranges.min_series }}S … {{ report.ranges.max_series }}S
   </div>
 
   <div class="section">
     <h4>Configuración</h4>
     S={{ report.inputs.n_series }} • P={{ report.inputs.n_parallel }} • MPPTs usados={{ report.inputs.mppts_used }} → Strings totales={{ report.total.strings }}<br>
-    Vmp_hot(string)={{ '%.1f'|format(report.string_check.vmp_hot_string_V) }} V &nbsp;
+    Vmp(string)={{ '%.1f'|format(report.string_check.vmp_hot_string_V) }} V &nbsp;
     Voc_cold(string)={{ '%.1f'|format(report.string_check.voc_cold_string_V) }} V<br>
     I_op={{ '%.2f'|format(report.string_check.imp_string_A) }} A &nbsp;
-    Isc_total_cold/MPPT={{ '%.2f'|format(report.string_check.isc_cold_total_A) }} A
+    Isc_total/MPPT={{ '%.2f'|format(report.string_check.isc_cold_total_A) }} A
   </div>
 
   <div class="section">
@@ -71,6 +80,20 @@
     Potencia pico: {{ '%.2f'|format(report.total.wp/1000) }} kWp<br>
     Estimado: {{ '%.2f'|format(report.total.prod_day) }} kWh/d ({{ report.total.prod_month|int }} kWh/mes)<br>
     Cobertura: {{ '%.1f'|format(report.total.coverage_pct) }}%
+  </div>
+
+  <div class="section">
+    <h4>Sugerencia de inversor (DC/AC)</h4>
+    Objetivo DC/AC: {{ report.inputs.dc_ac_target }}<br>
+    Requerido → objetivo: {{ '%.2f'|format(report.inv_sizing.required.ac_target_kw) }} kWac
+    (rango {{ '%.2f'|format(report.inv_sizing.required.ac_min_kw) }}–{{ '%.2f'|format(report.inv_sizing.required.ac_max_kw) }} kWac)<br>
+    Instalado → objetivo: {{ '%.2f'|format(report.inv_sizing.installed.ac_target_kw) }} kWac
+    (rango {{ '%.2f'|format(report.inv_sizing.installed.ac_min_kw) }}–{{ '%.2f'|format(report.inv_sizing.installed.ac_max_kw) }} kWac)
+    {% if report.inputs.inv_ac_kw_input and report.inputs.inv_ac_kw_input > 0 %}
+    <br>Inversor ingresado: {{ report.inputs.inv_ac_kw_input }} kWac →
+    DC/AC instalado ≈ {{ '%.2f'|format((report.total.wp/1000.0) / report.inputs.inv_ac_kw_input) }}
+    ({{ report.inv_sizing.ratio_status or '—' }})
+    {% endif %}
   </div>
 
   {% if report.recos %}

@@ -34,6 +34,8 @@ def defaults():
         "n_series": 3,
         "n_parallel": 1,
         "mppts_used": 1,
+        "dc_ac_target": 1.20,  # objetivo típico
+        "inv_ac_kw": "",       # opcional: potencia AC del inversor
     }
 
 def parse_form(form):
